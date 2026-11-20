@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="https://hansabrahymi.github.io/Tracker/">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#87CEEB">
+    <title>My Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --white:#FFFFFF;
+  --sky:#87CEEB;
+  --light:#DCEEFF;
+  --dark:#24658A;
+  --text:#1a2a38;
+  --muted:#6b8299;
+  --border:#e3eef5;
+  --success:#4caf50;
+  --warn:#ff9800;
+  --danger:#e57373;
+  --radius:14px;
+  --shadow:0 2px 8px rgba(36,101,138,0.08);
+  --shadow-lg:0 8px 24px rgba(36,101,138,0.14);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--white);color:var(--text);font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:16px;color:var(--text);width:100%;
+  padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--white);
+  outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--sky)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+.hide{display:none!important}
+
+/* Layout */
+#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+#sidebar{
+  width:240px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;transition:transform .25s;
+  padding-top:env(safe-area-inset-top);
+}
+.sidebar-brand{padding:20px 18px 14px;display:flex;align-items:center;gap:10px}
+.brand-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--sky),var(--dark));
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
+.brand-name{font-weight:700;font-size:17px;color:var(--dark)}
+.brand-sub{font-size:11px;color:var(--muted);font-weight:400}
+.nav-list{padding:6px 10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;
+  color:var(--text);font-weight:500;font-size:14.5px;width:100%;text-align:left;
+  transition:background .12s;margin-bottom:2px}
+.nav-item:hover{background:var(--light)}
+.nav-item.active{background:var(--light);color:var(--dark);font-weight:600}
+.nav-item .ico{width:20px;height:20px;display:grid;place-items:center;flex-shrink:0;color:var(--dark)}
+.nav-item .ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-sep{height:1px;background:var(--border);margin:8px 12px}
+.nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
+  padding:10px 14px 4px;font-weight:600}
+.add-section-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--dark);
+  font-weight:600;font-size:14px;border-radius:10px;margin:4px 10px;border:1px dashed var(--sky)}
+
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#topbar{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);
+  background:var(--white);flex-shrink:0;min-height:56px;
+}
+#menuBtn{display:none;width:38px;height:38px;border-radius:10px;background:var(--light);
+  color:var(--dark);place-items:center;flex-shrink:0}
+#menuBtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+#topTitle{font-weight:700;font-size:17px;color:var(--dark);flex:1}
+#topActions{display:flex;gap:8px}
+.icon-btn{width:38px;height:38px;border-radius:10px;background:var(--light);color:var(--dark);
+  display:grid;place-items:center;flex-shrink:0}
+.icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:active{transform:scale(.95)}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-bottom:32px}
+.page{max-width:900px;margin:0 auto}
+
+/* Overlay for mobile sidebar */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40;opacity:0;
+  pointer-events:none;transition:opacity .25s}
+#overlay.show{opacity:1;pointer-events:auto}
+
+/* Cards */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.card-title{font-weight:700;font-size:15px;color:var(--dark);margin-bottom:10px}
+.card-sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+.row{display:flex;align-items:center;gap:10px}
+.row.between{justify-content:space-between}
+.grid{display:grid;gap:12px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:600px){.grid-3{grid-template-columns:1fr 1fr}}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;
+  border-radius:10px;font-weight:600;font-size:14.5px;background:var(--light);color:var(--dark);
+  transition:transform .1s,filter .1s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--dark);color:#fff}
+.btn.sky{background:var(--sky);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--border)}
+.btn.danger{background:#fdecea;color:#c0392b}
+.btn.small{padding:7px 12px;font-size:13px;border-radius:8px}
+.btn.full{width:100%}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:10px;background:var(--light);color:var(--dark);display:grid;place-items:center}
+.btn-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+
+/* Calendar */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.cal-nav{width:40px;height:40px;border-radius:10px;background:var(--light);color:var(--dark);display:grid;place-items:center}
+.cal-nav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cal-month{font-weight:700;font-size:19px;color:var(--dark);text-align:center;flex:1}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:11.5px;font-weight:600;color:var(--muted);
+  padding:6px 0;text-transform:uppercase;letter-spacing:.3px}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:11px;background:var(--white);position:relative;font-size:14.5px;
+  font-weight:500;cursor:pointer;transition:background .12s;border:1px solid transparent;min-height:42px}
+.cal-day:hover{background:var(--light)}
+.cal-day.other{color:#c5d4df}
+.cal-day.today{background:var(--light);font-weight:700;color:var(--dark)}
+.cal-day.selected{background:var(--dark);color:#fff;font-weight:700}
+.cal-day.has-class{background:#eaf6fd}
+.cal-day.selected.has-class{background:var(--dark)}
+.cal-day .dots{display:flex;gap:2px;position:absolute;bottom:5px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--dark);opacity:.75}
+.cal-day.selected .dot{background:#fff}
+.cal-day .day-num{line-height:1}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted)}
+.cal-legend span{display:flex;align-items:center;gap:5px}
+.leg-dot{width:8px;height:8px;border-radius:50%;background:var(--sky)}
+
+/* Class list on selected date */
+.date-panel{margin-top:16px}
+.class-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;
+  background:var(--white);border:1px solid var(--border);margin-bottom:8px}
+.class-row .info{flex:1;min-width:0}
+.class-row .name{font-weight:600;font-size:14.5px}
+.class-row .time{font-size:12.5px;color:var(--muted)}
+.pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.pill.completed{background:#e8f5e9;color:#2e7d32}
+.pill.scheduled{background:#fff3e0;color:#e65100}
+.pill.cancelled{background:#fdecea;color:#c0392b}
+.pill.due{background:#e3f2fd;color:#1565c0}
+.pill.paid{background:#e8f5e9;color:#2e7d32}
+.pill.progress{background:#fff3e0;color:#e65100}
+.pill.archived{background:#eceff1;color:#546e7a}
+
+/* Progress bar */
+.progress{height:8px;background:var(--light);border-radius:20px;overflow:hidden;margin:8px 0}
+.progress > div{height:100%;background:linear-gradient(90deg,var(--sky),var(--dark));border-radius:20px;transition:width .3s}
+.progress.warn > div{background:linear-gradient(90deg,#ffb74d,#ff9800)}
+.progress.done > div{background:linear-gradient(90deg,#66bb6a,#43a047)}
+
+/* Modal / Sheet */
+.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(20,40,55,.4);opacity:0;pointer-events:none;transition:opacity .2s}
+.modal.show{opacity:1;pointer-events:auto}
+.sheet{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:560px;
+  max-height:90vh;overflow-y:auto;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(30px);transition:transform .2s;box-shadow:var(--shadow-lg)}
+.modal.show .sheet{transform:translateY(0)}
+@media(min-width:700px){.modal{align-items:center}.sheet{border-radius:20px;max-height:85vh}}
+.sheet-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px}
+.sheet-title{font-weight:700;font-size:17px;color:var(--dark)}
+.sheet-close{width:34px;height:34px;border-radius:50%;background:var(--light);color:var(--dark);display:grid;place-items:center}
+.sheet-close svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+
+/* Toggle row */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.switch{position:relative;width:44px;height:26px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.slider{position:absolute;inset:0;background:#cfd8dc;border-radius:26px;transition:.2s;cursor:pointer}
+.slider:before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;
+  top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch input:checked + .slider{background:var(--dark)}
+.switch input:checked + .slider:before{transform:translateX(18px)}
+
+/* Student card */
+.stu-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;
+  background:var(--white);border:1px solid var(--border);margin-bottom:10px;cursor:pointer;transition:box-shadow .15s}
+.stu-card:hover{box-shadow:var(--shadow-lg)}
+.avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--sky),var(--dark));
+  color:#fff;display:grid;place-items:center;font-weight:700;font-size:17px;flex-shrink:0}
+.stu-card .info{flex:1;min-width:0}
+.stu-card .name{font-weight:600;font-size:15px}
+.stu-card .meta{font-size:12.5px;color:var(--muted);margin-top:1px}
+.stu-card .right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .em-ico{font-size:38px;margin-bottom:10px;opacity:.5}
+.empty p{font-size:14px}
+
+/* FAB */
+.fab{position:fixed;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;
+  border-radius:50%;background:var(--dark);color:#fff;display:grid;place-items:center;
+  box-shadow:0 6px 18px rgba(36,101,138,.4);z-index:50;transition:transform .15s}
+.fab:active{transform:scale(.92)}
+.fab svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+
+/* Search bar */
+.search{display:flex;align-items:center;gap:8px;background:var(--light);border-radius:12px;
+  padding:0 12px;margin-bottom:14px}
+.search svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0}
+.search input{border:none;background:transparent;padding:11px 0}
+
+/* Filter chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:7px 14px;border-radius:20px;background:var(--light);color:var(--dark);
+  font-size:13px;font-weight:600;border:1px solid transparent}
+.chip.active{background:var(--dark);color:#fff}
+
+/* Calculator */
+.calc-display{background:var(--light);border-radius:14px;padding:18px;text-align:right;
+  font-size:30px;font-weight:700;color:var(--dark);min-height:70px;word-break:break-all;
+  display:flex;flex-direction:column;justify-content:flex-end;margin-bottom:14px}
+.calc-expr{font-size:14px;color:var(--muted);font-weight:400;min-height:18px;word-break:break-all}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc-display,.calc-grid{max-width:360px;margin-left:auto;margin-right:auto}
+.calc-btn{height:56px;border-radius:14px;background:var(--white);border:1px solid var(--border);
+  font-size:20px;font-weight:600;color:var(--text);display:grid;place-items:center;transition:background .1s}
+.calc-btn:active{background:var(--light)}
+.calc-btn.op{background:var(--light);color:var(--dark)}
+.calc-btn.eq{background:var(--dark);color:#fff}
+.calc-btn.eq:active{filter:brightness(1.15)}
+.calc-btn.wide{grid-column:span 2;aspect-ratio:auto}
+
+/* Notes */
+.note-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;
+  margin-bottom:10px;cursor:pointer;transition:box-shadow .15s}
+.note-card:hover{box-shadow:var(--shadow-lg)}
+.note-card .n-title{font-weight:600;font-size:14.5px;margin-bottom:4px;color:var(--dark)}
+.note-card .n-body{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.note-card .n-date{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* Toast */
+#toast{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--dark);color:#fff;padding:11px 20px;border-radius:24px;font-size:14px;font-weight:500;
+  z-index:200;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;max-width:90vw;
+  box-shadow:0 6px 20px rgba(36,101,138,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Form rows */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.field-row{display:flex;gap:10px}
+.field-row .field{flex:1;margin-bottom:14px}
+
+/* Stat cards */
+.stat{background:var(--light);border-radius:12px;padding:14px}
+.stat .s-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px}
+.stat .s-value{font-size:20px;font-weight:700;color:var(--dark)}
+.stat .s-value.small{font-size:16px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--light);padding:4px;border-radius:12px;margin-bottom:16px}
+.tab{flex:1;padding:9px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted);text-align:center}
+.tab.active{background:var(--white);color:var(--dark);box-shadow:var(--shadow)}
+
+/* Schedule items */
+.sched-item{display:flex;gap:12px;padding:12px;border-radius:12px;background:var(--white);
+  border:1px solid var(--border);margin-bottom:8px}
+.sched-time{width:64px;flex-shrink:0;text-align:center}
+.sched-time .t{font-weight:700;font-size:14px;color:var(--dark)}
+.sched-time .d{font-size:11px;color:var(--muted)}
+.sched-body{flex:1;min-width:0}
+
+/* Mobile */
+@media(max-width:820px){
+  #sidebar{position:fixed;top:0;left:0;bottom:0;z-index:50;transform:translateX(-100%);
+    box-shadow:var(--shadow-lg)}
+  #sidebar.open{transform:translateX(0)}
+  #menuBtn{display:grid}
+  #content{padding:14px;padding-bottom:90px}
+  .page{max-width:100%}
+}
+@media(min-width:821px){#menuBtn{display:none}}
+
+/* Payment row */
+.pay-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;
+  border-bottom:1px solid var(--border);gap:8px}
+.pay-row:last-child{border-bottom:none}
+
+/* Small helper */
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mb-8{margin-bottom:8px}
+.text-muted{color:var(--muted)}.text-dark{color:var(--dark)}.text-sm{font-size:13px}
+.text-xs{font-size:11.5px}.bold{font-weight:700}.center{text-align:center}
+.flex-1{flex:1}.nowrap{white-space:nowrap}
+</style>
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-logo">M</div>
+          <div>
+            <div class="brand-name">My Tracker</div>
+            <div class="brand-sub">Teaching & Finance</div>
+          </div>
+        </div>
+        <nav class="nav-list" id="navList">
+        </nav>
+      </aside>
+      <div id="overlay">
+      </div>
+      <main id="main">
+        <div id="topbar">
+          <button id="menuBtn" aria-label="Menu">
+            <svg viewBox="0 0 24 24">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div id="topTitle">Calendar</div>
+          <div id="topActions">
+            <button class="icon-btn" id="calcBtn" title="Calculator" aria-label="Calculator">
+              <svg viewBox="0 0 24 24">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="8" y2="10.01"/>
+                <line x1="12" y1="10" x2="12" y2="10.01"/>
+                <line x1="16" y1="10" x2="16" y2="10.01"/>
+                <line x1="8" y1="14" x2="8" y2="14.01"/>
+                <line x1="12" y1="14" x2="12" y2="14.01"/>
+                <line x1="16" y1="14" x2="16" y2="14.01"/>
+                <line x1="8" y1="18" x2="16" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="content">
+        </div>
+      </main>
+    </div>
+    <div class="modal" id="modal">
+      <div class="sheet" id="sheet">
+      </div>
+    </div>
+    <div id="toast">
+    </div>
+    <script>
+/* =========================================================================
+   MY TRACKER — Full Application
+   Single-file PWA. Offline-first with IndexedDB. Optional cloud sync ready.
+   ========================================================================= */
+
+/* ---------- Utilities ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYMD = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const todayYMD = () => ymd(new Date());
+const fmtMoney = n => '৳' + Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+const fmtDate = s => { const d=parseYMD(s); return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); };
+const fmtDateLong = s => { const d=parseYMD(s); return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); };
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* ---------- Storage layer (IndexedDB + localStorage mirror) ---------- */
+const DB_NAME='mytracker-db', DB_VER=1, STORE='kv';
+let _db=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    if(_db) return res(_db);
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE);};
+    req.onsuccess=e=>{_db=e.target.result;res(_db);};
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function idbGet(key){
+  try{const db=await openDB();return new Promise((res,rej)=>{
+    const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).get(key);
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+  catch(e){return null;}
+}
+async function idbSet(key,val){
+  try{const db=await openDB();return new Promise((res,rej)=>{
+    const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(val,key);
+    tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+  catch(e){return false;}
+}
+
+/* ---------- App State ---------- */
+const DEFAULT_STATE = {
+  version: 1,
+  students: [],        // {id,name,phone,whatsapp,address,notes,rate,rateMode:'cycle'|'perclass',archived:false,createdAt}
+  classes: [],         // {id,studentId,date,startTime,endTime,status:'scheduled'|'completed'|'cancelled',reminder:0,customReminder:null,note,createdAt,seq}
+  payments: [],        // {id,studentId,date,amount,cycleIndex,note} — cycleIndex marks which cycle it pays (null=general)
+  expenses: [],        // {id,date,amount,description,category,createdAt}
+  savings: { openingBalance: 0, txns: [] }, // txns: {id,date,amount,type:'deposit'|'withdraw',note}
+  notes: [],           // {id,title,body,createdAt,updatedAt}
+  customSections: [],  // {id,name,items:[{id,text,done}]}
+  settings: {
+    currency:'BDT',
+    currencySymbol:'৳',
+    cycleSize: 12,
+    expensesCategories: ['Food','Transportation','Shopping','Education','Bills','Entertainment','Medical','Other'],
+    notifPermRequested:false,
+    lastSync: null,
+    cloudEnabled: false,
+    cloudUrl: '',
+    cloudKey: ''
+  },
+  meta: { lastSaved: null }
+};
+
+let state = null;
+let saveTimer = null;
+let listeners = [];
+
+function deepClone(o){return JSON.parse(JSON.stringify(o));}
+
+async function loadState(){
+  let raw = await idbGet('state');
+  if(!raw){
+    const ls = localStorage.getItem('mytracker_state');
+    if(ls){ try{ raw = JSON.parse(ls); }catch(e){} }
+  }
+  if(raw && typeof raw === 'object'){
+    state = mergeDefaults(raw);
+  } else {
+    state = deepClone(DEFAULT_STATE);
+  }
+  return state;
+}
+function mergeDefaults(saved){
+  const base = deepClone(DEFAULT_STATE);
+  const merge = (t,s)=>{
+    if(Array.isArray(t)) return Array.isArray(s)?s:t;
+    if(t && typeof t==='object'){
+      const out = Array.isArray(s)?{}:{...t};
+      if(s && typeof s==='object'){
+        for(const k of Object.keys(s)){
+          if(k in t) out[k]=merge(t[k],s[k]);
+          else out[k]=s[k];
+        }
+      }
+      return out;
+    }
+    return s!==undefined?s:t;
+  };
+  return merge(base, saved);
+}
+function save(){
+  if(!state) return;
+  state.meta.lastSaved = Date.now();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    await idbSet('state', state);
+    try{ localStorage.setItem('mytracker_state', JSON.stringify(state)); }catch(e){}
+    renderNav();
+    if($('#sidebar.open')||innerWidth>=821) {/* keep nav in sync */}
+  }, 60);
+}
+function saveNow(){ if(!state)return; clearTimeout(saveTimer); idbSet('state',state); try{localStorage.setItem('mytracker_state',JSON.stringify(state));}catch(e){} }
+
+/* ---------- Derived helpers ---------- */
+const getStudent = id => state.students.find(s=>s.id===id);
+const activeStudents = () => state.students.filter(s=>!s.archived);
+const cycleSize = () => state.settings.cycleSize || 12;
+
+function completedClasses(studentId){
+  return state.classes.filter(c=>c.studentId===studentId && c.status==='completed');
+}
+function completedCount(studentId){
+  return completedClasses(studentId).length;
+}
+function paymentsFor(studentId){
+  return state.payments.filter(p=>p.studentId===studentId).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function totalReceived(studentId){
+  return paymentsFor(studentId).reduce((s,p)=>s+Number(p.amount||0),0);
+}
+/* Cycle model:
+   - Total completed classes C.
+   - Number of full cycles = floor(C / cycleSize)
+   - Classes in current cycle = C % cycleSize
+   - Each full cycle is expected to be paid. Payments are allocated oldest cycles first.
+   - A "cycle index" k (0-based) covers classes [k*size, (k+1)*size).
+*/
+function cyclesInfo(studentId){
+  const C = completedCount(studentId);
+  const size = cycleSize();
+  const full = Math.floor(C/size);
+  const inCycle = C % size;
+  const st = getStudent(studentId);
+  const rate = Number(st?.rate||0);
+  const payments = paymentsFor(studentId);
+  const received = payments.reduce((s,p)=>s+Number(p.amount||0),0);
+
+  // allocate payments to cycles
+  // Cycle k payable amount = rate (or per-class*size if perclass mode)
+  const perCycleAmount = st?.rateMode==='perclass' ? rate*size : rate;
+  let remaining = received;
+  let paidCycles = 0, partialCycleAmount = 0;
+  const cycleDetails = [];
+  for(let k=0;k<full;k++){
+    const due = perCycleAmount;
+    const paid = Math.min(remaining, due);
+    remaining -= paid;
+    const isPaid = paid >= due - 0.001;
+    if(isPaid) paidCycles++;
+    cycleDetails.push({index:k, due, paid, isPaid, partial: !isPaid && paid>0});
+  }
+  const outstanding = cycleDetails.reduce((s,c)=>s+(c.due-c.paid),0);
+  return {
+    totalCompleted:C, fullCycles:full, inCycle, size,
+    perCycleAmount, received,
+    paidCycles, outstanding, cycleDetails,
+    unpaidCycles: full - paidCycles,
+    dueNow: full>0 && outstanding>0,
+    totalEarned: C * (st?.rateMode==='perclass'?rate: (rate/size)),
+    // NOTE: totalEarned is theoretical based on classes; simpler: per-cycle billing
+  };
+}
+/* Expected earnings based on cycles: each full cycle is rate; current in-cycle classes count proportionally only if perclass */
+function expectedEarnings(studentId){
+  const st=getStudent(studentId); if(!st) return 0;
+  const C = completedCount(studentId);
+  const size = cycleSize();
+  const rate = Number(st.rate||0);
+  if(st.rateMode==='perclass') return C * rate;
+  return Math.floor(C/size) * rate;
+}
+function monthlyClasses(year, month, studentId=null){ // month 0-based
+  return state.classes.filter(c=>{
+    if(c.status!=='completed') return false;
+    if(studentId && c.studentId!==studentId) return false;
+    const d = parseYMD(c.date);
+    return d.getFullYear()===year && d.getMonth()===month;
+  }).length;
+}
+function yearlyClasses(year){
+  return state.classes.filter(c=>c.status==='completed' && parseYMD(c.date).getFullYear()===year).length;
+}
+function monthlyExpected(year, month, studentId=null){
+  if(studentId) return expectedEarnings(studentId);
+  return activeStudents().reduce((s,st)=>s+expectedEarnings(st.id),0);
+}
+
+/* ---------- Navigation ---------- */
+const NAV_ITEMS = [
+  {id:'calendar', label:'Calendar', icon:'calendar'},
+  {id:'important', label:'Important', icon:'note'},
+  {id:'salary', label:'Salary', icon:'wallet'},
+  {id:'expenses', label:'Expenses', icon:'cart'},
+  {id:'savings', label:'Savings', icon:'piggy'},
+  {id:'students', label:'Students', icon:'users'},
+  {id:'calculator', label:'Calculator', icon:'calc'},
+  {id:'settings', label:'Settings', icon:'gear'}
+];
+const ICONS = {
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>',
+  note:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+  wallet:'<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M16 6V4a2 2 0 0 0-2-2h-4"/><circle cx="17" cy="13" r="1.5"/>',
+  cart:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>',
+  piggy:'<path d="M20 6h-2a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2H4v4h2a4 4 0 0 0 4 4v4h8v-4a4 4 0 0 0 4-4h2V6z"/><circle cx="16" cy="10" r="1"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="16" y2="18"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  list:'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'
+};
+function iconSVG(name){return `<svg viewBox="0 0 24 24">${ICONS[name]||ICONS.list}</svg>`;}
+
+let currentPage = 'calendar';
+let currentParams = {};
+
+function navigate(page, params={}){
+  currentPage = page;
+  currentParams = params;
+  closeSidebar();
+  render();
+}
+
+function renderNav(){
+  const nl = $('#navList');
+  if(!nl) return;
+  let html = '';
+  for(const item of NAV_ITEMS){
+    if(item.id==='calculator') continue; // calculator is accessible via top button; can still be in nav? include for spec
+    // Actually include it per spec sidebar
+  }
+  // Spec sidebar: Calendar, Important, Salary, Expenses, Savings, Students, Calculator, Settings, Add Options
+  const order = ['calendar','important','salary','expenses','savings','students','calculator','settings'];
+  const map = Object.fromEntries(NAV_ITEMS.map(i=>[i.id,i]));
+  html += order.map(id=>{
+    const it = map[id]; if(!it) return '';
+    const active = currentPage===id ? 'active':'';
+    return `<button class="nav-item ${active}" onclick="navigate('${id}')">
+      <span class="ico">${iconSVG(it.icon)}</span><span>${it.label}</span></button>`;
+  }).join('');
+  // Custom sections
+  if(state.customSections.length){
+    html += `<div class="nav-sep"></div><div class="nav-label">My Sections</div>`;
+    html += state.customSections.map(cs=>{
+      const active = currentPage==='custom' && currentParams.sectionId===cs.id ? 'active':'';
+      return `<button class="nav-item ${active}" onclick="navigate('custom',{sectionId:'${cs.id}'})">
+        <span class="ico">${iconSVG('list')}</span><span>${escapeHtml(cs.name)}</span></button>`;
+    }).join('');
+  }
+  html += `<div class="nav-sep"></div>
+    <button class="add-section-btn" onclick="addCustomSection()">${iconSVG('plus')} Add Section</button>`;
+  nl.innerHTML = html;
+}
+
+function openSidebar(){$('#sidebar').classList.add('open');$('#overlay').classList.add('show');}
+function closeSidebar(){$('#sidebar').classList.remove('open');$('#overlay').classList.remove('show');}
+
+/* ---------- Render dispatcher ---------- */
+function render(){
+  save();
+  renderNav();
+  const content = $('#content');
+  const page = currentPage;
+  const titleMap = {calendar:'Calendar',important:'Important',salary:'Salary',expenses:'Expenses',
+    savings:'Savings',students:'Students',calculator:'Calculator',settings:'Settings',custom:'Section',
+    studentProfile:'Student'};
+  $('#topTitle').textContent = titleMap[page] || 'My Tracker';
+  content.scrollTop = 0;
+
+  switch(page){
+    case 'calendar': renderCalendar(content); break;
+    case 'important': renderNotes(content); break;
+    case 'salary': renderSalary(content); break;
+    case 'expenses': renderExpenses(content); break;
+    case 'savings': renderSavings(content); break;
+    case 'students': renderStudents(content); break;
+    case 'calculator': renderCalculator(content); break;
+    case 'settings': renderSettings(content); break;
+    case 'custom': renderCustomSection(content, currentParams.sectionId); break;
+    case 'studentProfile': renderStudentProfile(content, currentParams.studentId); break;
+    default: renderCalendar(content);
+  }
+}
+
+/* =========================================================================
+   CALENDAR PAGE
+   ========================================================================= */
+let calState = { year: new Date().getFullYear(), month: new Date().getMonth(), selected: todayYMD() };
+
+function renderCalendar(el){
+  const {year,month,selected} = calState;
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+
+  // Build day cells
+  const cells = [];
+  for(let i=startDow-1;i>=0;i--){
+    const d = prevDays - i;
+    const dt = new Date(year, month-1, d);
+    cells.push({d, date:ymd(dt), other:true, dow:dt.getDay()});
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dt = new Date(year, month, d);
+    cells.push({d, date:ymd(dt), other:false, dow:dt.getDay()});
+  }
+  const total = Math.ceil(cells.length/7)*7;
+  let nextD=1;
+  while(cells.length<total){
+    const dt = new Date(year, month+1, nextD++);
+    cells.push({d:dt.getDate(), date:ymd(dt), other:true, dow:dt.getDay()});
+  }
+
+  // classes per date
+  const classesByDate = {};
+  for(const c of state.classes){
+    if(!classesByDate[c.date]) classesByDate[c.date]=[];
+    classesByDate[c.date].push(c);
+  }
+
+  const today = todayYMD();
+
+  el.innerHTML = `<div class="page">
+    <div class="card" style="padding:14px">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calPrev()" aria-label="Previous month"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="cal-month">${MONTHS[month]} ${year}</div>
+        <button class="cal-nav" onclick="calNext()" aria-label="Next month"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+      <div class="cal-grid">
+        ${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+        ${cells.map(c=>{
+          const cls = classesByDate[c.date]||[];
+          const uniqStudents = [...new Set(cls.map(x=>x.studentId))];
+          const dots = uniqStudents.slice(0,4).map(()=>'<span class="dot"></span>').join('');
+          const isToday = c.date===today;
+          const isSel = c.date===selected;
+          return `<div class="cal-day ${c.other?'other':''} ${isToday?'today':''} ${isSel?'selected':''} ${cls.length?'has-class':''}"
+            onclick="calSelect('${c.date}')">
+            <span class="day-num">${c.d}</span>
+            ${dots?`<div class="dots">${dots}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="cal-legend">
+        <span><span class="leg-dot"></span> Has classes</span>
+        <span>Tap a date to record</span>
+      </div>
+    </div>
+
+    <div class="card date-panel">
+      <div class="row between" style="margin-bottom:10px">
+        <div class="card-title" style="margin:0">${fmtDateLong(selected)}</div>
+        <button class="btn small sky" onclick="quickRecord()">+ Record</button>
+      </div>
+      ${renderDateClasses(selected)}
+    </div>
+  </div>`;
+}
+
+function renderDateClasses(date){
+  const classes = state.classes.filter(c=>c.date===date).sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
+  if(!classes.length){
+    return `<div class="empty" style="padding:20px 10px"><div class="em-ico">📅</div>
+      <p>No classes recorded for this day.</p>
+      <button class="btn primary mt-12" onclick="quickRecord()">Record a class</button></div>`;
+  }
+  return classes.map(c=>{
+    const st = getStudent(c.studentId);
+    const name = st? escapeHtml(st.name):'Unknown';
+    const time = c.startTime ? `${c.startTime}${c.endTime?' – '+c.endTime:''}` : '';
+    const pill = c.status==='completed'?'<span class="pill completed">Completed</span>'
+      : c.status==='scheduled'?'<span class="pill scheduled">Scheduled</span>'
+      : '<span class="pill cancelled">Cancelled</span>';
+    return `<div class="class-row" onclick="openClassEditor('${c.id}')">
+      <div class="info">
+        <div class="name">${name}</div>
+        <div class="time">${time||'No time set'}${c.note?' • '+escapeHtml(c.note):''}</div>
+      </div>
+      ${pill}
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#9bb4c7;fill:none;stroke-width:2"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`;
+  }).join('');
+}
+
+function calPrev(){
+  if(calState.month===0){calState.month=11;calState.year--;} else calState.month--;
+  renderCalendar($('#content'));
+}
+function calNext(){
+  if(calState.month===11){calState.month=0;calState.year++;} else calState.month++;
+  renderCalendar($('#content'));
+}
+function calSelect(date){
+  calState.selected = date;
+  // adjust view month if outside
+  const d = parseYMD(date);
+  if(d.getMonth()!==calState.month || d.getFullYear()!==calState.year){
+    calState.month=d.getMonth(); calState.year=d.getFullYear();
+  }
+  renderCalendar($('#content'));
+}
+
+/* ---------- Quick record modal ---------- */
+function quickRecord(){
+  const date = calState.selected;
+  const students = activeStudents();
+  if(!students.length){
+    toast('Add a student first');
+    navigate('students');
+    return;
+  }
+  const existing = state.classes.filter(c=>c.date===date);
+  const existingByStudent = {};
+  for(const c of existing){ (existingByStudent[c.studentId] ||= []).push(c); }
+
+  const rows = students.map(st=>{
+    const recs = existingByStudent[st.id]||[];
+    const has = recs.length>0;
+    const latest = recs[recs.length-1];
+    const defaultStatus = latest? latest.status : '';
+    const times = recs.map(r=>`${r.startTime||'—'}${r.endTime?'-'+r.endTime:''}`).join(', ');
+    return `<div class="toggle-row">
+      <div class="flex-1" style="min-width:0">
+        <div class="row" style="gap:10px">
+          <div class="avatar" style="width:34px;height:34px;font-size:14px;border-radius:9px">${escapeHtml(st.name.charAt(0).toUpperCase())}</div>
+          <div style="min-width:0">
+            <div style="font-weight:600;font-size:14px">${escapeHtml(st.name)}</div>
+            <div class="text-xs text-muted">${recs.length? `${recs.length} record(s): ${escapeHtml(times)}` : 'No record'}</div>
+          </div>
+        </div>
+      </div>
+      <select data-sid="${st.id}" class="status-select" style="width:130px;padding:8px;font-size:13px">
+        <option value="">—</option>
+        <option value="scheduled" ${defaultStatus==='scheduled'?'selected':''}>Scheduled</option>
+        <option value="completed" ${defaultStatus==='completed'?'selected':''}>Completed</option>
+        <option value="cancelled" ${defaultStatus==='cancelled'?'selected':''}>Cancelled</option>
+      </select>
+    </div>`;
+  }).join('');
+
+  openSheet({
+    title: 'Record — ' + fmtDate(date),
+    body: `
+      <div class="text-sm text-muted mb-8">Choose a status for each student (leave blank to skip).</div>
+      ${rows}
+      <div class="mt-16 row">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveQuickRecord('${date}')">Save</button>
+      </div>
+      <div class="text-xs text-muted mt-8">Tip: Use "Add time" on a class from the date panel to set start/end times & reminders.</div>
+    `
+  });
+}
+
+function saveQuickRecord(date){
+  const selects = $$('.status-select');
+  let added=0, updated=0;
+  for(const sel of selects){
+    const sid = sel.dataset.sid;
+    const val = sel.value;
+    if(!val) continue;
+    // find existing record for this student/date (latest)
+    const recs = state.classes.filter(c=>c.date===date && c.studentId===sid);
+    if(recs.length){
+      const latest = recs[recs.length-1];
+      if(latest.status!==val){
+        // Changing status: if moving to completed from scheduled, that's fine. Just update.
+        latest.status = val;
+        updated++;
+      }
+    } else {
+      state.classes.push({
+        id:uid(), studentId:sid, date,
+        startTime:'', endTime:'', status:val, reminder:0, customReminder:null,
+        note:'', createdAt:Date.now(), seq: state.classes.length
+      });
+      added++;
+    }
+  }
+  saveNow();
+  closeSheet();
+  if(added||updated) toast(`Saved (${added} new, ${updated} updated)`);
+  renderCalendar($('#content'));
+}
+
+/* ---------- Class editor (times, reminder, delete) ---------- */
+function openClassEditor(classId){
+  const c = state.classes.find(x=>x.id===classId);
+  if(!c) return;
+  const st = getStudent(c.studentId);
+  const reminderOpts = [[0,'None'],[5,'5 min before'],[10,'10 min before'],[15,'15 min before'],[30,'30 min before'],[60,'60 min before'],[999,'Custom…']];
+  openSheet({
+    title: st?escapeHtml(st.name):'Class',
+    body: `
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="ceDate" value="${c.date}">
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Start time</label><input type="time" id="ceStart" value="${c.startTime||''}"></div>
+        <div class="field"><label>End time</label><input type="time" id="ceEnd" value="${c.endTime||''}"></div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="ceStatus">
+          <option value="scheduled" ${c.status==='scheduled'?'selected':''}>Scheduled</option>
+          <option value="completed" ${c.status==='completed'?'selected':''}>Completed</option>
+          <option value="cancelled" ${c.status==='cancelled'?'selected':''}>Cancelled</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Reminder</label>
+        <select id="ceReminder">
+          ${reminderOpts.map(([v,l])=>`<option value="${v}" ${Number(c.reminder)===v?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field hide" id="ceCustomWrap">
+        <label>Custom minutes before</label>
+        <input type="number" id="ceCustom" min="1" value="${c.customReminder||10}">
+      </div>
+      <div class="field">
+        <label>Note (optional)</label>
+        <input type="text" id="ceNote" value="${escapeHtml(c.note||'')}" placeholder="Topic, homework…">
+      </div>
+      <div class="row mt-16" style="gap:8px">
+        <button class="btn danger" onclick="deleteClass('${c.id}')">Delete</button>
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveClassEditor('${c.id}')">Save</button>
+      </div>
+      <button class="btn ghost full mt-12" onclick="addDuplicateClass('${c.id}')">Add another class for this student/date</button>
+    `,
+    onOpen: ()=>{
+      const sel = $('#ceReminder');
+      const wrap = $('#ceCustomWrap');
+      const toggle = ()=> wrap.classList.toggle('hide', sel.value!=='999');
+      sel.onchange = toggle; toggle();
+    }
+  });
+}
+
+function saveClassEditor(id){
+  const c = state.classes.find(x=>x.id===id); if(!c) return;
+  c.date = $('#ceDate').value || c.date;
+  c.startTime = $('#ceStart').value || '';
+  c.endTime = $('#ceEnd').value || '';
+  c.status = $('#ceStatus').value;
+  c.reminder = Number($('#ceReminder').value)||0;
+  c.customReminder = c.reminder===999 ? Number($('#ceCustom').value)||10 : null;
+  c.note = $('#ceNote').value.trim();
+  saveNow();
+  closeSheet();
+  toast('Class updated');
+  scheduleAllReminders();
+  render();
+}
+
+function deleteClass(id){
+  if(!confirm('Delete this class record?')) return;
+  state.classes = state.classes.filter(c=>c.id!==id);
+  saveNow();
+  closeSheet();
+  toast('Deleted');
+  scheduleAllReminders();
+  render();
+}
+
+function addDuplicateClass(id){
+  const c = state.classes.find(x=>x.id===id); if(!c) return;
+  state.classes.push({...deepClone(c), id:uid(), createdAt:Date.now(), seq:state.classes.length,
+    startTime:'', endTime:'', status:'scheduled', note:''});
+  saveNow();
+  closeSheet();
+  toast('Another record added');
+  render();
+}
+
+/* =========================================================================
+   STUDENTS PAGE
+   ========================================================================= */
+let studentsFilter = 'active';
+function renderStudents(el){
+  const q = (studentsFilter==='search')? '' : '';
+  const search = (window._stuSearch||'').toLowerCase();
+  let list = state.students.slice();
+  if(studentsFilter==='active') list = list.filter(s=>!s.archived);
+  else if(studentsFilter==='archived') list = list.filter(s=>s.archived);
+  else if(studentsFilter==='due') list = list.filter(s=>!s.archived && cyclesInfo(s.id).dueNow);
+  if(search) list = list.filter(s=>s.name.toLowerCase().includes(search)|| (s.phone||'').includes(search));
+
+  el.innerHTML = `<div class="page">
+    <div class="search">
+      ${iconSVG('list').replace('<svg','<svg style="display:none"')}
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" placeholder="Search students…" value="${escapeHtml(window._stuSearch||'')}" oninput="stuSearch(this.value)">
+    </div>
+    <div class="chips">
+      ${['active','due','archived'].map(f=>`<button class="chip ${studentsFilter===f?'active':''}" onclick="setStuFilter('${f}')">${f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
+      <button class="chip" onclick="openAddStudent()">+ Add</button>
+    </div>
+    ${list.length? list.map(s=>studentCard(s)).join('') : `<div class="empty"><div class="em-ico">👥</div><p>No students here yet.</p><button class="btn primary mt-12" onclick="openAddStudent()">Add Student</button></div>`}
+  </div>`;
+}
+function stuSearch(v){ window._stuSearch = v; renderStudents($('#content')); }
+function setStuFilter(f){ studentsFilter=f; renderStudents($('#content')); }
+
+function studentCard(s){
+  const info = cyclesInfo(s.id);
+  const monthCount = monthlyClasses(new Date().getFullYear(), new Date().getMonth(), s.id);
+  const dueNow = info.dueNow;
+  const progress = info.inCycle/info.size*100;
+  const nextCls = state.classes.filter(c=>c.studentId===s.id && c.status==='scheduled' && c.date>=todayYMD())
+    .sort((a,b)=>(a.date+a.startTime).localeCompare(b.date+b.startTime))[0];
+  return `<div class="stu-card" onclick="navigate('studentProfile',{studentId:'${s.id}'})">
+    <div class="avatar">${escapeHtml(s.name.charAt(0).toUpperCase())}</div>
+    <div class="info">
+      <div class="name">${escapeHtml(s.name)} ${s.archived?'<span class="pill archived">Archived</span>':''}</div>
+      <div class="meta">${monthCount} this month · ${info.inCycle}/${info.size} cycle</div>
+      <div class="progress ${info.inCycle===0?'':info.inCycle===info.size?'done':''}" style="margin:6px 0 0"><div style="width:${progress}%"></div></div>
+      <div class="meta mt-8">${nextCls?`Next: ${fmtDate(nextCls.date)} ${nextCls.startTime||''}`:'No upcoming class'}</div>
+    </div>
+    <div class="right">
+      ${dueNow?'<span class="pill due">Payment due</span>':'<span class="pill progress">In progress</span>'}
+      ${s.whatsapp?`<button class="btn-icon" onclick="event.stopPropagation();openWhatsApp('${s.id}')" title="WhatsApp" style="width:32px;height:32px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#25D366;fill:none;stroke-width:2"><path d="M21 11.5a8.5 8.5 0 0 1-12.8 7.4L3 21l2.1-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg></button>`:''}
+    </div>
+  </div>`;
+}
+
+function openAddStudent(){
+  openSheet({
+    title:'Add Student',
+    body:`
+      <div class="field"><label>Name *</label><input id="nsName" placeholder="Student name"></div>
+      <div class="field-row">
+        <div class="field"><label>Phone</label><input id="nsPhone" placeholder="01XXXXXXXXX" inputmode="tel"></div>
+        <div class="field"><label>WhatsApp</label><input id="nsWa" placeholder="8801XXXXXXXXX" inputmode="tel"></div>
+      </div>
+      <div class="field"><label>Address</label><input id="nsAddr" placeholder="Optional"></div>
+      <div class="field-row">
+        <div class="field"><label>Rate (৳)</label><input id="nsRate" type="number" inputmode="numeric" value="0"></div>
+        <div class="field"><label>Rate mode</label><select id="nsMode">
+          <option value="cycle">Per 12-class cycle</option>
+          <option value="perclass">Per class</option>
+        </select></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="nsNotes" placeholder="Anything important…"></textarea></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveNewStudent()">Save</button>
+      </div>
+    `
+  });
+}
+function saveNewStudent(){
+  const name = $('#nsName').value.trim();
+  if(!name){toast('Name required');return;}
+  const st = {
+    id:uid(), name,
+    phone:$('#nsPhone').value.trim(),
+    whatsapp:normalizeWa($('#nsWa').value.trim()),
+    address:$('#nsAddr').value.trim(),
+    rate:Number($('#nsRate').value)||0,
+    rateMode:$('#nsMode').value,
+    notes:$('#nsNotes').value.trim(),
+    archived:false, createdAt:Date.now()
+  };
+  state.students.push(st);
+  saveNow();
+  closeSheet();
+  toast('Student added');
+  render();
+}
+function normalizeWa(v){
+  let d = String(v||'').replace(/[^\d]/g,'');
+  if(!d) return '';
+  if(d.startsWith('0')) d='88'+d;
+  if(!d.startsWith('88') && d.length===11) d='880'+d.slice(1);
+  return d;
+}
+
+/* ---------- Student profile ---------- */
+function renderStudentProfile(el, id){
+  const s = getStudent(id);
+  if(!s){ el.innerHTML='<div class="empty"><p>Student not found.</p></div>'; return; }
+  const info = cyclesInfo(id);
+  const monthCount = monthlyClasses(new Date().getFullYear(), new Date().getMonth(), id);
+  const pay = paymentsFor(id);
+  const received = totalReceived(id);
+  const expected = expectedEarnings(id);
+  const progress = info.inCycle/info.size*100;
+  const remaining = info.size - info.inCycle;
+
+  // student-only calendar for current month
+  const classes = state.classes.filter(c=>c.studentId===id).sort((a,b)=>(b.date+b.startTime).localeCompare(a.date+a.startTime));
+
+  el.innerHTML = `<div class="page">
+    <button class="btn ghost small mb-8" onclick="navigate('students')">← All Students</button>
+    <div class="card">
+      <div class="row" style="gap:14px">
+        <div class="avatar" style="width:56px;height:56px;font-size:22px;border-radius:16px">${escapeHtml(s.name.charAt(0).toUpperCase())}</div>
+        <div class="flex-1">
+          <div style="font-weight:700;font-size:18px;color:var(--dark)">${escapeHtml(s.name)}</div>
+          <div class="text-sm text-muted">${s.phone?escapeHtml(s.phone):'No phone'}${s.archived?' • Archived':''}</div>
+        </div>
+        <button class="btn-icon" onclick="openEditStudent('${s.id}')" title="Edit">✎</button>
+      </div>
+      <div class="grid grid-3 mt-16">
+        <div class="stat"><div class="s-label">This month</div><div class="s-value">${monthCount}</div></div>
+        <div class="stat"><div class="s-label">Cycle</div><div class="s-value">${info.inCycle}/${info.size}</div></div>
+        <div class="stat"><div class="s-label">Remaining</div><div class="s-value">${remaining}</div></div>
+      </div>
+      <div class="mt-12">
+        <div class="row between text-sm"><span class="text-muted">Payment progress</span>
+          <span class="bold">${info.inCycle}/${info.size}${info.dueNow?' • '+info.unpaidCycles+' due':''}</span></div>
+        <div class="progress ${info.inCycle===info.size?'done':''}"><div style="width:${progress}%"></div></div>
+      </div>
+      <div class="grid grid-2 mt-12">
+        <div class="stat"><div class="s-label">Earned (est.)</div><div class="s-value small">${fmtMoney(expected)}</div></div>
+        <div class="stat"><div class="s-label">Received</div><div class="s-value small">${fmtMoney(received)}</div></div>
+      </div>
+      ${info.outstanding>0?`<div class="card mt-12" style="background:#fff7e6;border-color:#ffe0b2">
+        <div class="row between"><span class="bold text-dark">Outstanding</span><span class="bold" style="color:#e65100">${fmtMoney(info.outstanding)}</span></div>
+        <button class="btn primary full mt-8" onclick="openRecordPayment('${s.id}')">Record Payment</button>
+      </div>`:`<button class="btn primary full mt-12" onclick="openRecordPayment('${s.id}')">Record Payment</button>`}
+      <div class="row mt-8" style="gap:8px">
+        <button class="btn ghost flex-1" onclick="openScheduleClass('${s.id}')">+ Schedule</button>
+        ${s.whatsapp?`<button class="btn flex-1" style="background:#e8f8ee;color:#128c4b" onclick="openWhatsApp('${s.id}')">WhatsApp</button>`:''}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Payment cycles</div>
+      ${info.fullCycles===0?`<div class="text-sm text-muted">No completed cycles yet.</div>`:
+        info.cycleDetails.map(c=>`<div class="pay-row">
+          <div><div class="bold" style="font-size:14px">Cycle ${c.index+1}</div>
+            <div class="text-xs text-muted">Classes ${c.index*info.size+1}–${(c.index+1)*info.size}</div></div>
+          <div style="text-align:right">
+            <div class="bold">${fmtMoney(c.paid)} / ${fmtMoney(c.due)}</div>
+            ${c.isPaid?'<span class="pill paid">Paid</span>':c.partial?'<span class="pill progress">Partial</span>':'<span class="pill due">Due</span>'}
+          </div>
+        </div>`).join('')
+      }
+    </div>
+
+    <div class="card">
+      <div class="card-title">Payment history</div>
+      ${pay.length? pay.slice().reverse().map(p=>`<div class="pay-row">
+        <div><div class="bold" style="font-size:14px">${fmtMoney(p.amount)}</div>
+          <div class="text-xs text-muted">${fmtDate(p.date)}${p.note?' • '+escapeHtml(p.note):''}</div></div>
+        <button class="btn ghost small danger" onclick="deletePayment('${p.id}')">Delete</button>
+      </div>`).join('') : '<div class="text-sm text-muted">No payments recorded.</div>'}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Class history (${classes.length})</div>
+      ${classes.slice(0,80).map(c=>`<div class="pay-row">
+        <div><div class="bold" style="font-size:14px">${fmtDate(c.date)}</div>
+          <div class="text-xs text-muted">${c.startTime?`${c.startTime}${c.endTime?' – '+c.endTime:''}`:'No time'}${c.note?' • '+escapeHtml(c.note):''}</div></div>
+        <div class="row" style="gap:6px">
+          ${c.status==='completed'?'<span class="pill completed">Done</span>':c.status==='scheduled'?'<span class="pill scheduled">Sched</span>':'<span class="pill cancelled">Cancel</span>'}
+          <button class="btn-icon" style="width:30px;height:30px" onclick="openClassEditor('${c.id}')">✎</button>
+        </div>
+      </div>`).join('') || '<div class="text-sm text-muted">No classes yet.</div>'}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Contact & notes</div>
+      <div class="field"><label>Phone</label><input value="${escapeHtml(s.phone||'')}" onchange="updateStudentField('${s.id}','phone',this.value)"></div>
+      <div class="field"><label>WhatsApp</label><input value="${escapeHtml(s.whatsapp||'')}" onchange="updateStudentField('${s.id}','whatsapp',this.value)"></div>
+      <div class="field"><label>Address</label><input value="${escapeHtml(s.address||'')}" onchange="updateStudentField('${s.id}','address',this.value)"></div>
+      <div class="field"><label>Notes</label><textarea onchange="updateStudentField('${s.id}','notes',this.value)">${escapeHtml(s.notes||'')}</textarea></div>
+      <div class="row mt-8">
+        <button class="btn ${s.archived?'ghost':'danger'} flex-1" onclick="toggleArchive('${s.id}')">${s.archived?'Unarchive':'Archive'}</button>
+        <button class="btn danger flex-1" onclick="removeStudent('${s.id}')">Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateStudentField(id,field,value){
+  const s = getStudent(id); if(!s) return;
+  s[field] = field==='whatsapp'? normalizeWa(value) : value;
+  saveNow();
+}
+function toggleArchive(id){
+  const s = getStudent(id); if(!s) return;
+  s.archived = !s.archived; saveNow(); render();
+}
+function removeStudent(id){
+  if(!confirm('Delete student AND all their records? This cannot be undone.')) return;
+  state.students = state.students.filter(s=>s.id!==id);
+  state.classes = state.classes.filter(c=>c.studentId!==id);
+  state.payments = state.payments.filter(p=>p.studentId!==id);
+  saveNow(); toast('Deleted'); navigate('students');
+}
+function openEditStudent(id){
+  const s = getStudent(id); if(!s) return;
+  openSheet({
+    title:'Edit Student',
+    body:`
+      <div class="field"><label>Name</label><input id="esName" value="${escapeHtml(s.name)}"></div>
+      <div class="field-row">
+        <div class="field"><label>Rate (৳)</label><input id="esRate" type="number" value="${s.rate||0}"></div>
+        <div class="field"><label>Rate mode</label><select id="esMode">
+          <option value="cycle" ${s.rateMode==='cycle'?'selected':''}>Per 12-class cycle</option>
+          <option value="perclass" ${s.rateMode==='perclass'?'selected':''}>Per class</option>
+        </select></div>
+      </div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveEditStudent('${id}')">Save</button>
+      </div>
+    `
+  });
+}
+function saveEditStudent(id){
+  const s=getStudent(id); if(!s)return;
+  s.name=$('#esName').value.trim()||s.name;
+  s.rate=Number($('#esRate').value)||0;
+  s.rateMode=$('#esMode').value;
+  saveNow(); closeSheet(); render(); toast('Updated');
+}
+
+/* ---------- Payments ---------- */
+function openRecordPayment(studentId){
+  const s = getStudent(studentId);
+  const info = cyclesInfo(studentId);
+  const suggested = info.outstanding>0? info.outstanding : (info.perCycleAmount||0);
+  openSheet({
+    title:'Record Payment — '+escapeHtml(s.name),
+    body:`
+      ${info.outstanding>0?`<div class="card" style="background:#fff7e6;border-color:#ffe0b2;margin-bottom:14px">
+        <div class="text-sm">Outstanding: <span class="bold">${fmtMoney(info.outstanding)}</span> (${info.unpaidCycles} cycle(s))</div>
+      </div>`:`<div class="text-sm text-muted mb-8">No outstanding cycles. This will be recorded as a general payment.</div>`}
+      <div class="field"><label>Amount (৳)</label><input id="rpAmount" type="number" inputmode="numeric" value="${suggested}"></div>
+      <div class="field"><label>Date</label><input id="rpDate" type="date" value="${todayYMD()}"></div>
+      <div class="field"><label>Note</label><input id="rpNote" placeholder="Optional"></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="savePayment('${studentId}')">Record</button>
+      </div>
+    `
+  });
+}
+function savePayment(studentId){
+  const amount = Number($('#rpAmount').value)||0;
+  if(amount<=0){toast('Enter amount');return;}
+  state.payments.push({
+    id:uid(), studentId, amount,
+    date: $('#rpDate').value||todayYMD(),
+    note: $('#rpNote').value.trim(),
+    createdAt: Date.now()
+  });
+  saveNow(); closeSheet(); toast('Payment recorded'); render();
+}
+function deletePayment(id){
+  if(!confirm('Delete this payment?'))return;
+  state.payments = state.payments.filter(p=>p.id!==id);
+  saveNow(); render(); toast('Payment deleted');
+}
+
+/* ---------- Schedule class with time ---------- */
+function openScheduleClass(studentId){
+  const s = getStudent(studentId);
+  openSheet({
+    title:'Schedule Class — '+escapeHtml(s.name),
+    body:`
+      <div class="field"><label>Date</label><input id="scDate" type="date" value="${calState.selected}"></div>
+      <div class="field-row">
+        <div class="field"><label>Start</label><input id="scStart" type="time" value="16:00"></div>
+        <div class="field"><label>End</label><input id="scEnd" type="time" value="17:00"></div>
+      </div>
+      <div class="field"><label>Status</label><select id="scStatus">
+        <option value="scheduled">Scheduled</option>
+        <option value="completed">Completed</option>
+      </select></div>
+      <div class="field"><label>Reminder</label><select id="scReminder">
+        <option value="0">None</option><option value="5">5 min</option>
+        <option value="10" selected>10 min</option><option value="15">15 min</option>
+        <option value="30">30 min</option><option value="60">60 min</option>
+      </select></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveScheduledClass('${studentId}')">Save</button>
+      </div>
+    `
+  });
+}
+function saveScheduledClass(studentId){
+  const date = $('#scDate').value||calState.selected;
+  state.classes.push({
+    id:uid(), studentId, date,
+    startTime:$('#scStart').value||'',
+    endTime:$('#scEnd').value||'',
+    status:$('#scStatus').value,
+    reminder:Number($('#scReminder').value)||0,
+    customReminder:null, note:'',
+    createdAt:Date.now(), seq:state.classes.length
+  });
+  saveNow(); closeSheet(); toast('Class scheduled');
+  scheduleAllReminders();
+  render();
+}
+
+/* ---------- WhatsApp ---------- */
+function openWhatsApp(studentId){
+  const s = getStudent(studentId);
+  if(!s || !s.whatsapp){toast('No WhatsApp number');return;}
+  // Open WhatsApp chat with no pre-filled message
+  const url = `https://wa.me/${s.whatsapp}`;
+  window.open(url,'_blank');
+}
+
+/* =========================================================================
+   NOTES
+   ========================================================================= */
+function renderNotes(el){
+  const notes = state.notes.slice().sort((a,b)=>b.updatedAt-a.updatedAt);
+  const search = (window._noteSearch||'').toLowerCase();
+  const filtered = search? notes.filter(n=>(n.title+' '+n.body).toLowerCase().includes(search)) : notes;
+  el.innerHTML = `<div class="page">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" placeholder="Search notes…" value="${escapeHtml(window._noteSearch||'')}" oninput="window._noteSearch=this.value;renderNotes(document.getElementById('content'))">
+    </div>
+    <button class="btn primary full mb-8" onclick="openNoteEditor()">+ New Note</button>
+    ${filtered.length? filtered.map(n=>`<div class="note-card" onclick="openNoteEditor('${n.id}')">
+      <div class="n-title">${escapeHtml(n.title||'Untitled')}</div>
+      <div class="n-body">${escapeHtml((n.body||'').slice(0,160))||'<em>Empty</em>'}</div>
+      <div class="n-date">${new Date(n.updatedAt).toLocaleString()}</div>
+    </div>`).join('') : `<div class="empty"><div class="em-ico">📝</div><p>No notes yet.</p></div>`}
+  </div>`;
+}
+function openNoteEditor(id){
+  const n = id? state.notes.find(x=>x.id===id) : {id:null,title:'',body:''};
+  openSheet({
+    title: id?'Edit Note':'New Note',
+    body:`
+      <div class="field"><label>Title</label><input id="ntTitle" value="${escapeHtml(n.title||'')}" placeholder="Note title"></div>
+      <div class="field"><label>Body</label><textarea id="ntBody" style="min-height:180px" placeholder="Write anything…">${escapeHtml(n.body||'')}</textarea></div>
+      <div class="row mt-16">
+        ${id?`<button class="btn danger" onclick="deleteNote('${id}')">Delete</button>`:''}
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveNote('${id||''}')">Save</button>
+      </div>
+    `
+  });
+}
+function saveNote(id){
+  const title = $('#ntTitle').value.trim();
+  const body = $('#ntBody').value;
+  if(id){
+    const n = state.notes.find(x=>x.id===id);
+    if(n){n.title=title;n.body=body;n.updatedAt=Date.now();}
+  } else {
+    state.notes.push({id:uid(),title,body,createdAt:Date.now(),updatedAt:Date.now()});
+  }
+  saveNow(); closeSheet(); renderNotes($('#content')); toast('Saved');
+}
+function deleteNote(id){
+  if(!confirm('Delete note?'))return;
+  state.notes = state.notes.filter(n=>n.id!==id);
+  saveNow(); closeSheet(); renderNotes($('#content'));
+}
+
+/* =========================================================================
+   SALARY PAGE
+   ========================================================================= */
+function renderSalary(el){
+  const now = new Date();
+  const y=now.getFullYear(), m=now.getMonth();
+  const monthClasses = monthlyClasses(y,m);
+  const yearClasses = yearlyClasses(y);
+  const expected = activeStudents().reduce((s,st)=>s+expectedEarnings(st.id),0);
+  const received = state.payments.reduce((s,p)=>s+Number(p.amount||0),0);
+  const outstanding = activeStudents().reduce((s,st)=>s+cyclesInfo(st.id).outstanding,0);
+
+  const rows = activeStudents().map(st=>{
+    const info = cyclesInfo(st.id);
+    const mc = monthlyClasses(y,m,st.id);
+    const pct = info.inCycle/info.size*100;
+    let statusPill;
+    if(info.dueNow) statusPill = `<span class="pill due">Payment due</span>`;
+    else if(info.inCycle>0) statusPill = `<span class="pill progress">In progress</span>`;
+    else statusPill = `<span class="pill archived">No classes</span>`;
+    return `<div class="card" style="padding:14px">
+      <div class="row between">
+        <div class="bold" style="color:var(--dark)">${escapeHtml(st.name)}</div>
+        ${statusPill}
+      </div>
+      <div class="grid grid-3 mt-8" style="gap:8px">
+        <div class="stat" style="padding:10px"><div class="s-label">This month</div><div class="s-value small">${mc}</div></div>
+        <div class="stat" style="padding:10px"><div class="s-label">Cycle</div><div class="s-value small">${info.inCycle}/${info.size}</div></div>
+        <div class="stat" style="padding:10px"><div class="s-label">Remaining</div><div class="s-value small">${info.size-info.inCycle}</div></div>
+      </div>
+      <div class="progress ${info.inCycle===info.size?'done':''}" style="margin-top:10px"><div style="width:${pct}%"></div></div>
+      <div class="row between mt-8 text-sm">
+        <span class="text-muted">Amount due: <span class="bold" style="color:var(--dark)">${fmtMoney(info.outstanding)}</span></span>
+        <button class="btn small primary" onclick="openRecordPayment('${st.id}')">Pay</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="page">
+    <div class="grid grid-2">
+      <div class="stat"><div class="s-label">This month</div><div class="s-value">${monthClasses}</div></div>
+      <div class="stat"><div class="s-label">This year</div><div class="s-value">${yearClasses}</div></div>
+      <div class="stat"><div class="s-label">Expected earnings</div><div class="s-value small">${fmtMoney(expected)}</div></div>
+      <div class="stat"><div class="s-label">Received (all-time)</div><div class="s-value small">${fmtMoney(received)}</div></div>
+      <div class="stat" style="grid-column:1/-1;background:#fff7e6"><div class="s-label">Outstanding tuition</div><div class="s-value" style="color:#e65100">${fmtMoney(outstanding)}</div></div>
+    </div>
+    <div class="card-title mt-16" style="margin-bottom:10px">Student progress</div>
+    ${rows || '<div class="empty"><p>No active students.</p></div>'}
+  </div>`;
+}
+
+/* =========================================================================
+   EXPENSES
+   ========================================================================= */
+let expState = {year:new Date().getFullYear(), month:new Date().getMonth(), category:'all', view:'month'};
+function renderExpenses(el){
+  const {year,month,category,view} = expState;
+  let list = state.expenses.slice();
+  if(view==='month'){
+    list = list.filter(e=>{const d=parseYMD(e.date);return d.getFullYear()===year&&d.getMonth()===month;});
+  } else if(view==='year'){
+    list = list.filter(e=>parseYMD(e.date).getFullYear()===year);
+  } else if(view==='today'){
+    list = list.filter(e=>e.date===todayYMD());
+  }
+  if(category!=='all') list = list.filter(e=>e.category===category);
+  list.sort((a,b)=>b.date.localeCompare(a.date));
+  const total = list.reduce((s,e)=>s+Number(e.amount||0),0);
+
+  const cats = ['all',...state.settings.expensesCategories];
+  el.innerHTML = `<div class="page">
+    <div class="card">
+      <div class="row between">
+        <div class="card-title" style="margin:0">Expenses</div>
+        <div class="row" style="gap:6px">
+          ${['today','month','year'].map(v=>`<button class="chip ${view===v?'active':''}" onclick="setExpView('${v}')">${v.charAt(0).toUpperCase()+v.slice(1)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="row between mt-12">
+        <div class="text-sm text-muted">${view==='year'?year:MONTHS[month]+' '+year}</div>
+        ${view==='month'?`<div class="row">
+          <button class="btn-icon" onclick="expPrev()">‹</button>
+          <button class="btn-icon" onclick="expNext()">›</button>
+        </div>`:view==='year'?`<div class="row">
+          <button class="btn-icon" onclick="expPrevY()">‹</button>
+          <button class="btn-icon" onclick="expNextY()">›</button>
+        </div>`:''}
+      </div>
+      <div class="stat mt-12"><div class="s-label">Total (${category==='all'?'all':category})</div><div class="s-value" style="color:#c0392b">${fmtMoney(total)}</div></div>
+      <div class="chips mt-12" style="margin-bottom:0">
+        ${cats.map(c=>`<button class="chip ${category===c?'active':''}" onclick="setExpCat('${c}')">${c}</button>`).join('')}
+      </div>
+    </div>
+    <button class="btn primary full mb-8" onclick="openAddExpense()">+ Add Expense</button>
+    ${list.length? list.map(e=>`<div class="card" style="padding:12px;margin-bottom:8px">
+      <div class="row between">
+        <div><div class="bold">${escapeHtml(e.description||e.category)}</div>
+          <div class="text-xs text-muted">${fmtDate(e.date)} • ${e.category}</div></div>
+        <div class="row" style="gap:6px">
+          <div class="bold" style="color:#c0392b">${fmtMoney(e.amount)}</div>
+          <button class="btn-icon" style="width:30px;height:30px" onclick="openEditExpense('${e.id}')">✎</button>
+        </div>
+      </div>
+    </div>`).join('') : `<div class="empty"><div class="em-ico">🧾</div><p>No expenses for this period.</p></div>`}
+  </div>`;
+}
+function setExpView(v){expState.view=v;renderExpenses($('#content'));}
+function setExpCat(c){expState.category=c;renderExpenses($('#content'));}
+function expPrev(){if(expState.month===0){expState.month=11;expState.year--;}else expState.month--;renderExpenses($('#content'));}
+function expNext(){if(expState.month===11){expState.month=0;expState.year++;}else expState.month++;renderExpenses($('#content'));}
+function expPrevY(){expState.year--;renderExpenses($('#content'));}
+function expNextY(){expState.year++;renderExpenses($('#content'));}
+
+function openAddExpense(){
+  openSheet({
+    title:'Add Expense',
+    body:`
+      <div class="field"><label>Amount (৳)</label><input id="exAmt" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>Description</label><input id="exDesc" placeholder="What was it for?"></div>
+      <div class="field"><label>Category</label><select id="exCat">
+        ${state.settings.expensesCategories.map(c=>`<option>${escapeHtml(c)}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Date</label><input id="exDate" type="date" value="${todayYMD()}"></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveExpense()">Save</button>
+      </div>
+    `
+  });
+}
+function saveExpense(){
+  const amount = Number($('#exAmt').value)||0;
+  if(amount<=0){toast('Enter amount');return;}
+  state.expenses.push({
+    id:uid(), amount,
+    description:$('#exDesc').value.trim(),
+    category:$('#exCat').value,
+    date:$('#exDate').value||todayYMD(),
+    createdAt:Date.now()
+  });
+  saveNow(); closeSheet(); toast('Expense added'); renderExpenses($('#content'));
+}
+function openEditExpense(id){
+  const e = state.expenses.find(x=>x.id===id); if(!e)return;
+  openSheet({
+    title:'Edit Expense',
+    body:`
+      <div class="field"><label>Amount</label><input id="eeAmt" type="number" value="${e.amount}"></div>
+      <div class="field"><label>Description</label><input id="eeDesc" value="${escapeHtml(e.description||'')}"></div>
+      <div class="field"><label>Category</label><select id="eeCat">
+        ${state.settings.expensesCategories.map(c=>`<option ${c===e.category?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Date</label><input id="eeDate" type="date" value="${e.date}"></div>
+      <div class="row mt-16">
+        <button class="btn danger" onclick="deleteExpense('${id}')">Delete</button>
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveEditExpense('${id}')">Save</button>
+      </div>
+    `
+  });
+}
+function saveEditExpense(id){
+  const e=state.expenses.find(x=>x.id===id); if(!e)return;
+  e.amount=Number($('#eeAmt').value)||0;
+  e.description=$('#eeDesc').value.trim();
+  e.category=$('#eeCat').value;
+  e.date=$('#eeDate').value||e.date;
+  saveNow(); closeSheet(); renderExpenses($('#content')); toast('Updated');
+}
+function deleteExpense(id){
+  if(!confirm('Delete this expense?'))return;
+  state.expenses = state.expenses.filter(e=>e.id!==id);
+  saveNow(); closeSheet(); renderExpenses($('#content'));
+}
+
+/* =========================================================================
+   SAVINGS
+   ========================================================================= */
+function renderSavings(el){
+  const now=new Date();
+  const y=now.getFullYear(), m=now.getMonth();
+  const received = state.payments.reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalExp = state.expenses.reduce((s,e)=>s+Number(e.amount||0),0);
+  const monthExp = state.expenses.filter(e=>{const d=parseYMD(e.date);return d.getFullYear()===y&&d.getMonth()===m;})
+    .reduce((s,e)=>s+Number(e.amount||0),0);
+  const monthReceived = state.payments.filter(p=>{const d=parseYMD(p.date);return d.getFullYear()===y&&d.getMonth()===m;})
+    .reduce((s,p)=>s+Number(p.amount||0),0);
+  const outstanding = activeStudents().reduce((s,st)=>s+cyclesInfo(st.id).outstanding,0);
+  const opening = Number(state.savings.openingBalance||0);
+  const deposits = state.savings.txns.filter(t=>t.type==='deposit').reduce((s,t)=>s+Number(t.amount||0),0);
+  const withdraws = state.savings.txns.filter(t=>t.type==='withdraw').reduce((s,t)=>s+Number(t.amount||0),0);
+  const net = received - totalExp + deposits - withdraws + opening;
+
+  const txns = state.savings.txns.slice().sort((a,b)=>b.date.localeCompare(a.date));
+
+  el.innerHTML = `<div class="page">
+    <div class="grid grid-2">
+      <div class="stat"><div class="s-label">Income received</div><div class="s-value small">${fmtMoney(received)}</div></div>
+      <div class="stat"><div class="s-label">Total expenses</div><div class="s-value small">${fmtMoney(totalExp)}</div></div>
+      <div class="stat" style="background:#e8f5e9"><div class="s-label">Net balance</div><div class="s-value" style="color:#2e7d32">${fmtMoney(net)}</div></div>
+      <div class="stat" style="background:#fff7e6"><div class="s-label">Outstanding tuition</div><div class="s-value small" style="color:#e65100">${fmtMoney(outstanding)}</div></div>
+      <div class="stat"><div class="s-label">This month income</div><div class="s-value small">${fmtMoney(monthReceived)}</div></div>
+      <div class="stat"><div class="s-label">This month expenses</div><div class="s-value small">${fmtMoney(monthExp)}</div></div>
+    </div>
+
+    <div class="card mt-12">
+      <div class="card-title">Opening balance</div>
+      <div class="row">
+        <input type="number" value="${opening}" id="sbOpening" style="flex:1">
+        <button class="btn primary small" onclick="saveOpening()">Save</button>
+      </div>
+      <div class="text-xs text-muted mt-8">Set your savings starting point.</div>
+    </div>
+
+    <div class="card">
+      <div class="row between"><div class="card-title" style="margin:0">Savings deposits</div>
+        <button class="btn small sky" onclick="openSavingsTxn('deposit')">+ Deposit</button></div>
+      <div class="row between mt-8"><div class="card-title" style="margin:0">Withdrawals</div>
+        <button class="btn small ghost" onclick="openSavingsTxn('withdraw')">+ Withdraw</button></div>
+      <div class="mt-12">
+        ${txns.length? txns.slice(0,20).map(t=>`<div class="pay-row">
+          <div><div class="bold" style="color:${t.type==='deposit'?'#2e7d32':'#c0392b'}">${t.type==='deposit'?'+':'−'} ${fmtMoney(t.amount)}</div>
+            <div class="text-xs text-muted">${fmtDate(t.date)}${t.note?' • '+escapeHtml(t.note):''}</div></div>
+          <button class="btn-icon" style="width:28px;height:28px" onclick="deleteTxn('${t.id}')">×</button>
+        </div>`).join(''):'<div class="text-sm text-muted">No deposits or withdrawals.</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+function saveOpening(){
+  state.savings.openingBalance = Number($('#sbOpening').value)||0;
+  saveNow(); toast('Saved'); renderSavings($('#content'));
+}
+function openSavingsTxn(type){
+  openSheet({
+    title: type==='deposit'?'Add Deposit':'Add Withdrawal',
+    body:`
+      <div class="field"><label>Amount (৳)</label><input id="stAmt" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>Date</label><input id="stDate" type="date" value="${todayYMD()}"></div>
+      <div class="field"><label>Note</label><input id="stNote" placeholder="Optional"></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveTxn('${type}')">Save</button>
+      </div>
+    `
+  });
+}
+function saveTxn(type){
+  const amt = Number($('#stAmt').value)||0;
+  if(amt<=0){toast('Enter amount');return;}
+  state.savings.txns.push({id:uid(),amount:amt,date:$('#stDate').value||todayYMD(),type,note:$('#stNote').value.trim()});
+  saveNow(); closeSheet(); renderSavings($('#content')); toast('Saved');
+}
+function deleteTxn(id){
+  if(!confirm('Delete?'))return;
+  state.savings.txns = state.savings.txns.filter(t=>t.id!==id);
+  saveNow(); renderSavings($('#content'));
+}
+
+/* =========================================================================
+   CALCULATOR
+   ========================================================================= */
+let calcExpr = '';
+function renderCalculator(el){
+  el.innerHTML = `<div class="page">
+    <div class="card">
+      <div class="calc-display">
+        <div class="calc-expr" id="calcExprEl">${escapeHtml(calcExpr)||'&nbsp;'}</div>
+        <div id="calcResult">0</div>
+      </div>
+      <div class="calc-grid">
+        <button class="calc-btn" onclick="calcPress('C')">C</button>
+        <button class="calc-btn" onclick="calcPress('DEL')">⌫</button>
+        <button class="calc-btn op" onclick="calcPress('%')">%</button>
+        <button class="calc-btn op" onclick="calcPress('/')">÷</button>
+        <button class="calc-btn" onclick="calcPress('7')">7</button>
+        <button class="calc-btn" onclick="calcPress('8')">8</button>
+        <button class="calc-btn" onclick="calcPress('9')">9</button>
+        <button class="calc-btn op" onclick="calcPress('*')">×</button>
+        <button class="calc-btn" onclick="calcPress('4')">4</button>
+        <button class="calc-btn" onclick="calcPress('5')">5</button>
+        <button class="calc-btn" onclick="calcPress('6')">6</button>
+        <button class="calc-btn op" onclick="calcPress('-')">−</button>
+        <button class="calc-btn" onclick="calcPress('1')">1</button>
+        <button class="calc-btn" onclick="calcPress('2')">2</button>
+        <button class="calc-btn" onclick="calcPress('3')">3</button>
+        <button class="calc-btn op" onclick="calcPress('+')">+</button>
+        <button class="calc-btn wide" onclick="calcPress('0')">0</button>
+        <button class="calc-btn" onclick="calcPress('.')">.</button>
+        <button class="calc-btn eq" onclick="calcPress('=')">=</button>
+      </div>
+    </div>
+  </div>`;
+  calcUpdate();
+}
+function calcPress(k){
+  if(k==='C'){calcExpr='';}
+  else if(k==='DEL'){calcExpr=calcExpr.slice(0,-1);}
+  else if(k==='='){ try{ const r=evalExpr(calcExpr); calcExpr=String(r);}catch(e){calcExpr='Error';} }
+  else { calcExpr+=k; }
+  calcUpdate();
+}
+function calcUpdate(){
+  const e=$('#calcExprEl'); const r=$('#calcResult');
+  if(!e) return;
+  e.textContent = calcExpr || '\u00a0';
+  let display = '0';
+  try{
+    if(calcExpr){
+      if(/^[\d.]+$/.test(calcExpr)) display=calcExpr;
+      else { display=String(evalExpr(calcExpr)); }
+    }
+  }catch(err){ display = ''; }
+  r.textContent = display;
+}
+function evalExpr(s){
+  // Safe evaluation: numbers, + - * / % . ( )
+  let expr = s.replace(/%/g,'/100');
+  if(!/^[\d+\-*/().\s]+$/.test(expr)) throw new Error('bad');
+  // eslint-disable-next-line no-new-func
+  const v = Function('"use strict";return ('+expr+')')();
+  if(!isFinite(v)) throw new Error('inf');
+  return Math.round(v*1e10)/1e10;
+}
+function openCalculator(){
+  if(currentPage!=='calculator'){ currentPage='calculator'; render(); }
+}
+
+/* =========================================================================
+   CUSTOM SECTIONS
+   ========================================================================= */
+function addCustomSection(){
+  openSheet({
+    title:'New Section',
+    body:`
+      <div class="field"><label>Section name</label><input id="csName" placeholder="e.g. Goals"></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveCustomSection()">Add</button>
+      </div>
+    `
+  });
+}
+function saveCustomSection(){
+  const name = $('#csName').value.trim();
+  if(!name) return;
+  state.customSections.push({id:uid(),name,items:[],createdAt:Date.now()});
+  saveNow(); closeSheet(); render(); toast('Section added');
+}
+function renderCustomSection(el, id){
+  const cs = state.customSections.find(c=>c.id===id);
+  if(!cs){ el.innerHTML='<div class="empty"><p>Section not found.</p></div>'; return; }
+  el.innerHTML = `<div class="page">
+    <div class="card">
+      <div class="row between">
+        <div class="card-title" style="margin:0">${escapeHtml(cs.name)}</div>
+        <button class="btn-icon" onclick="renameCustomSection('${id}')">✎</button>
+      </div>
+      <div class="text-sm text-muted">Simple checklist / list.</div>
+      <div class="row mt-12">
+        <input id="csItemInput" placeholder="Add item…" onkeydown="if(event.key==='Enter')addSectionItem('${id}')">
+        <button class="btn primary small" onclick="addSectionItem('${id}')">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      ${cs.items.length? cs.items.map(it=>`<div class="pay-row">
+        <label class="row" style="gap:10px;cursor:pointer">
+          <input type="checkbox" ${it.done?'checked':''} onchange="toggleSectionItem('${id}','${it.id}',this.checked)" style="width:20px;height:20px;flex-shrink:0">
+          <span style="${it.done?'text-decoration:line-through;color:#9bb4c7':''}">${escapeHtml(it.text)}</span>
+        </label>
+        <button class="btn-icon" style="width:28px;height:28px" onclick="removeSectionItem('${id}','${it.id}')">×</button>
+      </div>`).join('') : '<div class="text-sm text-muted">Empty. Add your first item.</div>'}
+    </div>
+    <button class="btn danger full" onclick="deleteCustomSection('${id}')">Delete section</button>
+  </div>`;
+}
+function addSectionItem(id){
+  const cs = state.customSections.find(c=>c.id===id); if(!cs)return;
+  const inp = $('#csItemInput'); const v = inp.value.trim(); if(!v)return;
+  cs.items.push({id:uid(),text:v,done:false});
+  inp.value=''; saveNow(); renderCustomSection($('#content'),id);
+}
+function toggleSectionItem(secId,itemId,done){
+  const cs = state.customSections.find(c=>c.id===secId); if(!cs)return;
+  const it = cs.items.find(x=>x.id===itemId); if(it){it.done=done;saveNow();}
+}
+function removeSectionItem(secId,itemId){
+  const cs = state.customSections.find(c=>c.id===secId); if(!cs)return;
+  cs.items = cs.items.filter(x=>x.id!==itemId); saveNow(); renderCustomSection($('#content'),secId);
+}
+function deleteCustomSection(id){
+  if(!confirm('Delete section and its items?'))return;
+  state.customSections = state.customSections.filter(c=>c.id!==id);
+  saveNow(); navigate('calendar');
+}
+function renameCustomSection(id){
+  const cs = state.customSections.find(c=>c.id===id); if(!cs)return;
+  openSheet({
+    title:'Rename Section',
+    body:`<div class="field"><input id="rnName" value="${escapeHtml(cs.name)}"></div>
+      <div class="row mt-16">
+        <button class="btn ghost flex-1" onclick="closeSheet()">Cancel</button>
+        <button class="btn primary flex-1" onclick="saveRenameSection('${id}')">Save</button>
+      </div>`
+  });
+}
+function saveRenameSection(id){
+  const cs=state.customSections.find(c=>c.id===id); if(!cs)return;
+  cs.name=$('#rnName').value.trim()||cs.name;
+  saveNow(); closeSheet(); render();
+}
+
+/* =========================================================================
+   SETTINGS
+   ========================================================================= */
+function renderSettings(el){
+  el.innerHTML = `<div class="page">
+    <div class="card">
+      <div class="card-title">General</div>
+      <div class="field"><label>Currency symbol</label>
+        <input value="${escapeHtml(state.settings.currencySymbol||'৳')}" onchange="state.settings.currencySymbol=this.value;saveNow();render();">
+      </div>
+      <div class="field"><label>Cycle size (classes per payment cycle)</label>
+        <input type="number" value="${state.settings.cycleSize||12}" onchange="state.settings.cycleSize=Math.max(1,Number(this.value)||12);saveNow();render();">
+      </div>
+      <div class="field"><label>Expense categories (comma separated)</label>
+        <input value="${escapeHtml(state.settings.expensesCategories.join(', '))}" onchange="state.settings.expensesCategories=this.value.split(',').map(s=>s.trim()).filter(Boolean);saveNow();">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Notifications & reminders</div>
+      <div class="toggle-row">
+        <div><div class="bold">Enable reminders</div><div class="text-xs text-muted">Local notifications when classes are near</div></div>
+        <span class="bold" style="color:${('Notification' in window)?'#2e7d32':'#c0392b'}">${('Notification' in window)?'Supported':'Not supported'}</span>
+      </div>
+      <button class="btn primary full mt-8" onclick="requestNotif()">Request Permission</button>
+      <div class="text-xs text-muted mt-8">On iPhone/iPad, notifications require the PWA to be added to Home Screen and iOS 16.4+.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Easy Backup & Restore (recommended)</div>
+      <div class="text-sm text-muted mb-12">
+        This is the simplest way to move your data between phones or keep a safe copy.<br><br>
+        <strong>To copy data to another device:</strong><br>
+        1. Tap <b>Download Backup</b> on this device → a file is saved.<br>
+        2. Send that file to your other phone (WhatsApp, AirDrop, email, Files app…).<br>
+        3. On the other phone open this app → Settings → <b>Restore Backup</b> and choose the file.
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn primary" onclick="exportJSON()">Download Backup</button>
+        <button class="btn sky" onclick="document.getElementById('importFile').click()">Restore Backup</button>
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn ghost small" onclick="exportCSV()">Export CSV (spreadsheet)</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" class="hide" onchange="importJSON(this)">
+      <div class="text-xs text-muted mt-8">Backup file contains everything (students, classes, payments, notes, savings…). Keep it private.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cloud sync (optional – advanced)</div>
+      <div class="text-sm text-muted mb-8">
+        Your data stays safely on this device by default. Cloud sync is only needed if you want automatic sharing between devices without files.<br>
+        It requires a free Supabase account and a bit of setup. If you are not comfortable with that, just use <b>Download Backup / Restore Backup</b> above — it is reliable and simple.
+      </div>
+      <div class="field"><label>Supabase URL</label><input id="cloudUrl" value="${escapeHtml(state.settings.cloudUrl||'')}" placeholder="https://xxxx.supabase.co"></div>
+      <div class="field"><label>Anon key</label><input id="cloudKey" value="${escapeHtml(state.settings.cloudKey||'')}" placeholder="eyJhbGciOi..."></div>
+      <button class="btn primary full" onclick="saveCloud()">Save cloud settings</button>
+      <div class="text-xs text-muted mt-8">Last local save: ${state.meta.lastSaved?new Date(state.meta.lastSaved).toLocaleString():'never'}</div>
+      <div class="row mt-8" style="gap:8px">
+        <button class="btn ghost flex-1" onclick="manualSyncPush()">Push to cloud</button>
+        <button class="btn ghost flex-1" onclick="manualSyncPull()">Pull from cloud</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Danger zone</div>
+      <button class="btn danger full" onclick="resetAll()">Erase all data</button>
+    </div>
+
+    <div class="text-xs text-muted center" style="margin-top:20px">My Tracker · v1.0 · Data stored locally + optional cloud</div>
+  </div>`;
+}
+
+function requestNotif(){
+  if(!('Notification' in window)){toast('Notifications not supported');return;}
+  Notification.requestPermission().then(p=>{
+    toast('Permission: '+p);
+    state.settings.notifPermRequested=true; saveNow();
+  });
+}
+function exportJSON(){
+  const data = JSON.stringify(state,null,2);
+  downloadFile('mytracker-backup-'+todayYMD()+'.json', data, 'application/json');
+}
+function exportCSV(){
+  const rows = [];
+  rows.push(['Type','Date','Student/Description','Category','Amount','Status','Note']);
+  for(const c of state.classes){
+    const s=getStudent(c.studentId);
+    rows.push(['Class',c.date,s?s.name:'',c.startTime?`${c.startTime}-${c.endTime}`:'', '',c.status,c.note||'']);
+  }
+  for(const p of state.payments){
+    const s=getStudent(p.studentId);
+    rows.push(['Payment',p.date,s?s.name:'','',p.amount,'paid',p.note||'']);
+  }
+  for(const e of state.expenses) rows.push(['Expense',e.date,e.description,e.category,e.amount,'', '']);
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  downloadFile('mytracker-export-'+todayYMD()+'.csv', csv, 'text/csv');
+}
+function downloadFile(name, content, type){
+  const blob = new Blob([content],{type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},400);
+  toast('Exported');
+}
+function importJSON(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.students || !data.classes){throw new Error('Invalid format');}
+      state = mergeDefaults(data);
+      saveNow(); render(); toast('Imported successfully');
+    }catch(err){ toast('Import failed: '+err.message); }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+function saveCloud(){
+  state.settings.cloudUrl = $('#cloudUrl').value.trim();
+  state.settings.cloudKey = $('#cloudKey').value.trim();
+  state.settings.cloudEnabled = !!state.settings.cloudUrl;
+  saveNow(); toast('Cloud config saved');
+}
+async function manualSyncPush(){
+  if(!state.settings.cloudUrl){toast('No cloud URL set');return;}
+  try{
+    const res = await fetch(state.settings.cloudUrl+'/rest/v1/tracker_state',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':state.settings.cloudKey,'Authorization':'Bearer '+state.settings.cloudKey,'Prefer':'resolution=merge-duplicates'},
+      body: JSON.stringify({id:'default',data:state,updated_at:new Date().toISOString()})
+    });
+    if(res.ok){state.meta.lastSync=Date.now();saveNow();toast('Pushed to cloud');}
+    else toast('Push failed: '+res.status);
+  }catch(e){ toast('Network error'); }
+}
+async function manualSyncPull(){
+  if(!state.settings.cloudUrl){toast('No cloud URL set');return;}
+  try{
+    const res = await fetch(state.settings.cloudUrl+'/rest/v1/tracker_state?id=eq.default&select=data,updated_at',{
+      headers:{'apikey':state.settings.cloudKey,'Authorization':'Bearer '+state.settings.cloudKey}
+    });
+    if(!res.ok){toast('Pull failed: '+res.status);return;}
+    const arr = await res.json();
+    if(!arr.length){toast('No cloud data');return;}
+    if(!confirm('Replace local data with cloud copy?')) return;
+    state = mergeDefaults(arr[0].data);
+    saveNow(); render(); toast('Pulled from cloud');
+  }catch(e){ toast('Network error'); }
+}
+function resetAll(){
+  if(!confirm('Erase ALL data permanently?'))return;
+  if(!confirm('Are you absolutely sure?'))return;
+  state = deepClone(DEFAULT_STATE);
+  saveNow(); render(); toast('All data erased');
+}
+
+/* =========================================================================
+   REMINDERS (local notifications)
+   ========================================================================= */
+let reminderTimers = [];
+function scheduleAllReminders(){
+  reminderTimers.forEach(t=>clearTimeout(t));
+  reminderTimers = [];
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  const now = Date.now();
+  for(const c of state.classes){
+    if(c.status!=='scheduled') continue;
+    const mins = c.reminder===999 ? Number(c.customReminder||10) : Number(c.reminder||0);
+    if(!mins) continue;
+    if(!c.startTime) continue;
+    const dt = parseYMD(c.date);
+    const [hh,mm] = c.startTime.split(':').map(Number);
+    dt.setHours(hh,mm,0,0);
+    const when = dt.getTime() - mins*60000;
+    if(when < now) continue;
+    const delay = when - now;
+    if(delay > 24*3600*1000) continue; // cap timers at 24h; re-schedules on app open
+    const st = getStudent(c.studentId);
+    const t = setTimeout(()=>{
+      try{
+        new Notification('Class reminder',{
+          body: `${st?st.name:'Student'} at ${c.startTime}`,
+          tag: 'class-'+c.id
+        });
+      }catch(e){}
+    }, delay);
+    reminderTimers.push(t);
+  }
+}
+
+/* =========================================================================
+   MODAL / SHEET system
+   ========================================================================= */
+function openSheet({title,body,onOpen}){
+  const modal = $('#modal');
+  const sheet = $('#sheet');
+  sheet.innerHTML = `
+    <div class="sheet-header">
+      <div class="sheet-title">${title}</div>
+      <button class="sheet-close" onclick="closeSheet()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    ${body}
+  `;
+  modal.classList.add('show');
+  setTimeout(()=>{ onOpen && onOpen(); }, 30);
+}
+function closeSheet(){
+  $('#modal').classList.remove('show');
+}
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+async function boot(){
+  await loadState();
+  renderNav();
+  renderCalendar($('#content'));
+
+  // Top buttons
+  $('#menuBtn').onclick = openSidebar;
+  $('#overlay').onclick = closeSidebar;
+  // Calculator toggles: open from any page, close returns exactly to the previous page
+  let prevPageBeforeCalc = 'calendar';
+  $('#calcBtn').onclick = ()=>{
+    if(currentPage === 'calculator'){
+      currentPage = prevPageBeforeCalc || 'calendar';
+      render();
+    } else {
+      prevPageBeforeCalc = currentPage;
+      currentPage = 'calculator';
+      render();
+    }
+  };
+
+  // Close modal on background click
+  $('#modal').addEventListener('click', e=>{ if(e.target.id==='modal') closeSheet(); });
+
+  // Register service worker for offline/PWA (needs the site served over https)
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+
+  // Re-schedule reminders on open
+  scheduleAllReminders();
+
+  // Ask for permission once
+  if(!state.settings.notifPermRequested && 'Notification' in window && Notification.permission==='default'){
+    setTimeout(()=>{ requestNotif(); }, 2500);
+  }
+
+  // Auto-save indicator (silent)
+  window.addEventListener('beforeunload', saveNow);
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveNow(); });
+
+  // Expose globals used by inline handlers
+  window.state = state;
+}
+
+// Re-expose after state changes (inline handlers reference `state`)
+const _origSave = save;
+// keep reference — inline handlers use window.state; sync it
+setInterval(()=>{ window.state = state; }, 1000);
+
+// Kick off
+window.addEventListener('DOMContentLoaded', boot);
+// Expose core functions globally
+Object.assign(window, {
+  navigate, render, openSidebar, closeSidebar, toast,
+  calPrev, calNext, calSelect, quickRecord, saveQuickRecord,
+  openClassEditor, saveClassEditor, deleteClass, addDuplicateClass,
+  renderStudents, stuSearch, setStuFilter, openAddStudent, saveNewStudent,
+  renderStudentProfile, updateStudentField, toggleArchive, removeStudent,
+  openEditStudent, saveEditStudent, openRecordPayment, savePayment, deletePayment,
+  openScheduleClass, saveScheduledClass, openWhatsApp,
+  renderNotes, openNoteEditor, saveNote, deleteNote,
+  renderSalary, renderExpenses, setExpView, setExpCat, expPrev, expNext, expPrevY, expNextY,
+  openAddExpense, saveExpense, openEditExpense, saveEditExpense, deleteExpense,
+  renderSavings, saveOpening, openSavingsTxn, saveTxn, deleteTxn,
+  renderCalculator, calcPress,
+  addCustomSection, saveCustomSection, renderCustomSection,
+  addSectionItem, toggleSectionItem, removeSectionItem, deleteCustomSection,
+  renameCustomSection, saveRenameSection,
+  renderSettings, requestNotif, exportJSON, exportCSV, importJSON, saveCloud,
+  manualSyncPush, manualSyncPull, resetAll,
+  openSheet, closeSheet, saveNow, save
+});
+</script>
+  </body>
+</html>
