@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <base href="https://hansabrahymi.github.io/Tracker/">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1284,8 +1285,8 @@ function saveScheduledClass(studentId){
 function openWhatsApp(studentId){
   const s = getStudent(studentId);
   if(!s || !s.whatsapp){toast('No WhatsApp number');return;}
-  const msg = encodeURIComponent(`Hello ${s.name}, `);
-  const url = `https://wa.me/${s.whatsapp}?text=${msg}`;
+  // Open WhatsApp chat with no pre-filled message
+  const url = `https://wa.me/${s.whatsapp}`;
   window.open(url,'_blank');
 }
 
@@ -1782,25 +1783,39 @@ function renderSettings(el){
     </div>
 
     <div class="card">
-      <div class="card-title">Backup & export</div>
+      <div class="card-title">Easy Backup & Restore (recommended)</div>
+      <div class="text-sm text-muted mb-12">
+        This is the simplest way to move your data between phones or keep a safe copy.<br><br>
+        <strong>To copy data to another device:</strong><br>
+        1. Tap <b>Download Backup</b> on this device → a file is saved.<br>
+        2. Send that file to your other phone (WhatsApp, AirDrop, email, Files app…).<br>
+        3. On the other phone open this app → Settings → <b>Restore Backup</b> and choose the file.
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn primary" onclick="exportJSON()">Download Backup</button>
+        <button class="btn sky" onclick="document.getElementById('importFile').click()">Restore Backup</button>
+      </div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
-        <button class="btn sky" onclick="exportJSON()">Export JSON</button>
-        <button class="btn sky" onclick="exportCSV()">Export CSV</button>
-        <button class="btn ghost" onclick="document.getElementById('importFile').click()">Import JSON</button>
+        <button class="btn ghost small" onclick="exportCSV()">Export CSV (spreadsheet)</button>
       </div>
       <input type="file" id="importFile" accept=".json" class="hide" onchange="importJSON(this)">
-      <div class="text-xs text-muted mt-8">JSON preserves everything. CSV exports students, classes, payments, expenses.</div>
+      <div class="text-xs text-muted mt-8">Backup file contains everything (students, classes, payments, notes, savings…). Keep it private.</div>
     </div>
 
     <div class="card">
-      <div class="card-title">Cloud sync (optional)</div>
-      <div class="text-sm text-muted mb-8">Data is stored locally on this device. To sync between iPhone/iPad/Android, configure a Supabase endpoint below. This app works offline regardless.</div>
-      <div class="field"><label>Supabase URL</label><input id="cloudUrl" value="${escapeHtml(state.settings.cloudUrl||'')}" placeholder="https://xxx.supabase.co"></div>
-      <div class="field"><label>Anon key</label><input id="cloudKey" value="${escapeHtml(state.settings.cloudKey||'')}" placeholder="eyJ…"></div>
-      <button class="btn primary full" onclick="saveCloud()">Save cloud config</button>
-      <div class="text-xs text-muted mt-8">When enabled, saves will push to your endpoint. Last saved: ${state.meta.lastSaved?new Date(state.meta.lastSaved).toLocaleString():'never'}</div>
-      <button class="btn ghost full mt-8" onclick="manualSyncPush()">Push now</button>
-      <button class="btn ghost full mt-8" onclick="manualSyncPull()">Pull now</button>
+      <div class="card-title">Cloud sync (optional – advanced)</div>
+      <div class="text-sm text-muted mb-8">
+        Your data stays safely on this device by default. Cloud sync is only needed if you want automatic sharing between devices without files.<br>
+        It requires a free Supabase account and a bit of setup. If you are not comfortable with that, just use <b>Download Backup / Restore Backup</b> above — it is reliable and simple.
+      </div>
+      <div class="field"><label>Supabase URL</label><input id="cloudUrl" value="${escapeHtml(state.settings.cloudUrl||'')}" placeholder="https://xxxx.supabase.co"></div>
+      <div class="field"><label>Anon key</label><input id="cloudKey" value="${escapeHtml(state.settings.cloudKey||'')}" placeholder="eyJhbGciOi..."></div>
+      <button class="btn primary full" onclick="saveCloud()">Save cloud settings</button>
+      <div class="text-xs text-muted mt-8">Last local save: ${state.meta.lastSaved?new Date(state.meta.lastSaved).toLocaleString():'never'}</div>
+      <div class="row mt-8" style="gap:8px">
+        <button class="btn ghost flex-1" onclick="manualSyncPush()">Push to cloud</button>
+        <button class="btn ghost flex-1" onclick="manualSyncPull()">Pull from cloud</button>
+      </div>
     </div>
 
     <div class="card">
@@ -1967,7 +1982,18 @@ async function boot(){
   // Top buttons
   $('#menuBtn').onclick = openSidebar;
   $('#overlay').onclick = closeSidebar;
-  $('#calcBtn').onclick = ()=>{ if(currentPage!=='calculator'){ currentPage='calculator'; render(); } };
+  // Calculator toggles: open from any page, close returns exactly to the previous page
+  let prevPageBeforeCalc = 'calendar';
+  $('#calcBtn').onclick = ()=>{
+    if(currentPage === 'calculator'){
+      currentPage = prevPageBeforeCalc || 'calendar';
+      render();
+    } else {
+      prevPageBeforeCalc = currentPage;
+      currentPage = 'calculator';
+      render();
+    }
+  };
 
   // Close modal on background click
   $('#modal').addEventListener('click', e=>{ if(e.target.id==='modal') closeSheet(); });
